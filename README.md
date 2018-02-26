@@ -10,6 +10,6 @@ Changes:
 - added changes from https://trac.webkit.org/changeset/86667/webkit/trunk
 
 Other changes:
-- replaced url generation function with QT5 implementation to properly generate non-latin1 links
+- replaced url generation function with QT5 implementation to properly generate non-latin1 links and fixed handling of long links (issue exists in QT5)
 
 Tested only with x64 VS2015 build
