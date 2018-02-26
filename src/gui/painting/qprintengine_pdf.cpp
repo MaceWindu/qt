@@ -1468,35 +1468,31 @@ void QPdfEnginePrivate::writeFonts()
 void QPdfEngine::addHyperlink(const QRectF &r, const QUrl &url)
 {
     Q_D(QPdfEngine);
-    char buf[256];
-    QRectF rr = d->pageMatrix().mapRect(r);
-    uint annot = d->addXrefEntry(-1);
-    QByteArray urlascii = url.toString().toLatin1();
+
+    const uint annot = d->addXrefEntry(-1);
+    const QByteArray urlascii = url.toEncoded();
     int len = urlascii.size();
-    char *url_esc = new char[len * 2 + 1];
-    const char * urldata = urlascii.constData();
-    int k = 0;
-    for (int j = 0; j < len; j++, k++){
-        if (urldata[j] == '(' ||
-            urldata[j] == ')' ||
-            urldata[j] == '\\'){
-            url_esc[k] = '\\';
-            k++;
-        }
-        url_esc[k] = urldata[j];
+    QVarLengthArray<char> url_esc;
+    url_esc.reserve(len + 1);
+    for (int j = 0; j < len; j++) {
+        if (urlascii[j] == '(' || urlascii[j] == ')' || urlascii[j] == '\\')
+            url_esc.append('\\');
+        url_esc.append(urlascii[j]);
     }
-    url_esc[k] = 0;
+    url_esc.append('\0');
+
+    char buf[256];
+    const QRectF rr = d->pageMatrix().mapRect(r);
     d->xprintf("<<\n/Type /Annot\n/Subtype /Link\n/Rect [");
-    d->xprintf("%s ", qt_real_to_string(rr.left(),buf));
-    d->xprintf("%s ", qt_real_to_string(rr.top(),buf));
-    d->xprintf("%s ", qt_real_to_string(rr.right(),buf));
-    d->xprintf("%s", qt_real_to_string(rr.bottom(),buf));
+    d->xprintf("%s ", qt_real_to_string(rr.left(), buf));
+    d->xprintf("%s ", qt_real_to_string(rr.top(), buf));
+    d->xprintf("%s ", qt_real_to_string(rr.right(), buf));
+    d->xprintf("%s", qt_real_to_string(rr.bottom(), buf));
     d->xprintf("]\n/Border [0 0 0]\n/A <<\n");
-    d->xprintf("/Type /Action\n/S /URI\n/URI (%s)\n", url_esc);
+    d->xprintf("/Type /Action\n/S /URI\n/URI (%s)\n", url_esc.constData());
     d->xprintf(">>\n>>\n");
     d->xprintf("endobj\n");
     d->currentPage->annotations.append(annot);
-    delete[] url_esc;
 }
 
 void QPdfEngine::addLink(const QRectF &r, const QString &anchor)
