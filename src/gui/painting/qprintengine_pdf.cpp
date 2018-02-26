@@ -1106,6 +1106,7 @@ void QPdfEnginePrivate::xprintf(const char* fmt, ...)
     va_start(args, fmt);
     int bufsize = qvsnprintf(buf, msize, fmt, args);
 
+    Q_ASSERT(bufsize != -1);
     Q_ASSERT(bufsize<msize);
 
     va_end(args);
@@ -1489,7 +1490,10 @@ void QPdfEngine::addHyperlink(const QRectF &r, const QUrl &url)
     d->xprintf("%s ", qt_real_to_string(rr.right(), buf));
     d->xprintf("%s", qt_real_to_string(rr.bottom(), buf));
     d->xprintf("]\n/Border [0 0 0]\n/A <<\n");
-    d->xprintf("/Type /Action\n/S /URI\n/URI (%s)\n", url_esc.constData());
+    d->xprintf("/Type /Action\n/S /URI\n/URI (");
+    d->stream->writeRawData(url_esc.constData(), url_esc.size());
+    d->streampos += url_esc.size();
+    d->xprintf(")\n");
     d->xprintf(">>\n>>\n");
     d->xprintf("endobj\n");
     d->currentPage->annotations.append(annot);
