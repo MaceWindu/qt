@@ -764,8 +764,6 @@ void QPdfEnginePrivate::convertImage(const QImage & image, QByteArray & imageDat
     }
 }
 
-#include <iostream>
-
 class jpg_header_reader {
 private:
   const QByteArray * data;
@@ -1365,6 +1363,7 @@ void QPdfEnginePrivate::embedFont(QFontSubset *font)
     int toUnicode = requestObject();
 
     QFontEngine::Properties properties = font->fontEngine->properties();
+    QByteArray postscriptName = properties.postscriptName.replace(' ', '_');
 
     {
         qreal scale = 1000/properties.emSquare.toReal();
@@ -1378,7 +1377,7 @@ void QPdfEnginePrivate::embedFont(QFontSubset *font)
             s << (char)('A' + (tag % 26));
             tag /= 26;
         }
-        s <<  '+' << properties.postscriptName << "\n"
+        s <<  '+' << postscriptName << "\n"
             "/Flags " << 4 << "\n"
             "/FontBBox ["
           << properties.boundingBox.x()*scale
@@ -1421,7 +1420,7 @@ void QPdfEnginePrivate::embedFont(QFontSubset *font)
         QPdf::ByteStream s(&cid);
         s << "<< /Type /Font\n"
             "/Subtype /CIDFontType2\n"
-            "/BaseFont /" << properties.postscriptName << "\n"
+            "/BaseFont /" << postscriptName << "\n"
             "/CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >>\n"
             "/FontDescriptor " << fontDescriptor << "0 R\n"
             "/CIDToGIDMap /Identity\n"
@@ -1445,7 +1444,7 @@ void QPdfEnginePrivate::embedFont(QFontSubset *font)
         QPdf::ByteStream s(&font);
         s << "<< /Type /Font\n"
             "/Subtype /Type0\n"
-            "/BaseFont /" << properties.postscriptName << "\n"
+            "/BaseFont /" << postscriptName << "\n"
             "/Encoding /Identity-H\n"
             "/DescendantFonts [" << cidfont << "0 R]\n"
             "/ToUnicode " << toUnicode << "0 R"
@@ -1479,16 +1478,16 @@ void QPdfEngine::addHyperlink(const QRectF &r, const QUrl &url)
         if (urlascii[j] == '(' || urlascii[j] == ')' || urlascii[j] == '\\')
             url_esc.append('\\');
         url_esc.append(urlascii[j]);
-    }
+        }
     url_esc.append('\0');
 
     char buf[256];
     const QRectF rr = d->pageMatrix().mapRect(r);
     d->xprintf("<<\n/Type /Annot\n/Subtype /Link\n/Rect [");
-    d->xprintf("%s ", qt_real_to_string(rr.left(), buf));
-    d->xprintf("%s ", qt_real_to_string(rr.top(), buf));
-    d->xprintf("%s ", qt_real_to_string(rr.right(), buf));
-    d->xprintf("%s", qt_real_to_string(rr.bottom(), buf));
+    d->xprintf("%s ", qt_real_to_string(rr.left(),buf));
+    d->xprintf("%s ", qt_real_to_string(rr.top(),buf));
+    d->xprintf("%s ", qt_real_to_string(rr.right(),buf));
+    d->xprintf("%s", qt_real_to_string(rr.bottom(),buf));
     d->xprintf("]\n/Border [0 0 0]\n/A <<\n");
     d->xprintf("/Type /Action\n/S /URI\n/URI (");
     d->stream->writeRawData(url_esc.constData(), url_esc.size());
